@@ -218,8 +218,6 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
   for(iter in seq(start, maxiter, 1)) # cseiler: in case of interruption, continue with last iterration
      {
       object@iter <- iter
-      
-      cat("Beginning iteration", iter, "\n")
         
       # Get individuals we need to calculate the fitness for.
       getFitFor <- list()
@@ -273,22 +271,22 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       write(names(callArgs), argNamesFile)
         
       # File to store all the individuals in.
-      indivsFile <- "individuals.txt"
+      popFile <- "population.txt"
 
       # Check for the existence of the indivs file.
-      if (file.exists(indivsFile)) {system(sprintf("rm %s", indivsFile))}
+      if (file.exists(popFile)) {system(sprintf("rm %s", popFile))}
         
       Sys.sleep(1)
         
       # Write the individuals to a separate file. The cost function will read in
       # a specific individual to calculate the fitness of using an identifier.
       for (indiv in getFitFor) {
-        cat(unlist(indiv), "\n", file = indivsFile, append = TRUE)
+        cat(unlist(indiv), "\n", file = popFile, append = TRUE)
       }
         
       # Create the table.dat file
       dataAssimPath <- "/home/aadams/projects/def-cseiler-ab/aadams/data-assimilation"
-      indivsFile <- paste0(dataAssimPath, "/", farmName, "/", indivsFile)
+      popFile <- paste0(dataAssimPath, "/", farmName, "/", popFile)
       # Each case has its own val file that will be created in setArgs.R.
       valFile <- paste0(dataAssimPath, "/", farmName, "/", argValsFile)
       typeFile <- paste0(dataAssimPath, "/", farmName, "/", argTypesFile)
@@ -297,11 +295,11 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
         
       argsToChange <- list("parameterFile, run_classic_file")
         
-      for (id in 1:popSize) {
+      for (id in 1:length(getFitFor)) {
         # Since each case is a separate instance, I need to add the daisy package to libPaths() each time.
         appendLibPaths <- "R -e \".libPaths(c(.libPaths(), '/home/aadams/daisy/renv'))"
         loadDaisy <- "library(daisy)"
-        callCostFunc <- paste0("cost.fun('", id, "', '", indivsFile, "', '", 
+        callCostFunc <- paste0("cost.fun('", id, "', '", popFile, "', '", 
                           valFile, "', '", typeFile, "', '", lenFile, "', '", 
                           nameFile, "', '", dataAssimPath, "', '", 
                           argsToChange, "', '", farmName, "', '", keepOutput, "', '",
@@ -315,7 +313,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
         
       # Wait until the simInfo.txt file exists for every RUN folder.
       Sys.sleep(2)
-      runs <- 1:popSize
+      runs <- 1:length(getFitFor)
       while (length(runs)) {
         for (runNum in runs) {
           f <- paste0("RUN", runNum)
@@ -334,8 +332,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       # Read in every individual and get their fitness value.
         
       library(readr)
-        
-      print("Reading in fitness values.")
+
       getFitForInd <- 1
       for (instance in 1:popSize) {
           
@@ -363,19 +360,19 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
         }
       }
         
-      print("Moving to GEN folder")
-        
-      # Move all RUNX folders to the GEN folder
+      # Move all RUNX folders and population file to the GEN folder
       genFolder <- paste0("GEN", iter)
       # Make the GENX folder.
       system(paste("mkdir", genFolder))
       Sys.sleep(1)
       # Move all RUNX folders to GEN folder.
-      for (x in 1:popSize) {
+      for (x in 1:length(getFitFor)) {
         runFolder <- paste0("RUN", x)
         system(paste("mv", runFolder, genFolder))
         Sys.sleep(1)
       }
+      
+      system(paste("mv", popFile, genFolder))
         
       # if(iter == 81) {print(Pop)} # cseiler Pop OK here
       # if(iter == 81) {print(Fitness)} # cseiler Fitness OK here
@@ -461,7 +458,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       # selection
       if(is.function(selection))
         { 
-          set.seed(iter) # cseiler: important, otherwise iterruption has impact on result
+          # set.seed(iter) # cseiler: important, otherwise iterruption has impact on result
           sel <- selection(object)
           # sel <- do.call(selection, c(object, callArgs))
           Pop <- sel$population
@@ -492,7 +489,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
              }             
           object@population <- Pop
           object@fitness <- Fitness
-        }
+      }
 
       # mutation
       pm <- if(is.function(pmutation)) pmutation(object) else pmutation
@@ -530,33 +527,27 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
     #  if(iter == 80){stop(iter)}
     # cseiler end
     
-    # Move the iteration output to the farm_archive folder.
-    archiveFolder <- paste0(farmName, "_ARCHIVE")
-    
-    # Remove archive folder if it exists
-    if (file.exists(paste0(dataAssimPath, "/", archiveFolder))) {
-      system(paste0("rm -rf ", dataAssimPath, "/", archiveFolder))
-    }
-    Sys.sleep(2)
-    
-    # Create the archive folder in the data assimilation directory.
-    system(paste0("mkdir ", dataAssimPath, "/", archiveFolder))
-    Sys.sleep(2)
-    system(paste0("mv ", genFolder, " ", dataAssimPath, "/", archiveFolder))
-    system(paste0("mv ", "object_iteration_", iter, ".rds ", 
-                  dataAssimPath, "/", archiveFolder))
+    if (keepOutput) {
+      # Move the iteration output to the farm_archive folder.
+      archiveFolder <- paste0(farmName, "_ARCHIVE")
 
+      # Create the archive folder in the data assimilation directory.
+      system(paste0("mkdir ", dataAssimPath, "/", archiveFolder))
+      Sys.sleep(2)
+      system(paste0("mv ", genFolder, " ", dataAssimPath, "/", archiveFolder))
+      system(paste0("mv ", "object_iteration_", iter, ".rds ", 
+                    dataAssimPath, "/", archiveFolder))
+    }
     # End of iteration
-    cat("Completed iteration", iter, "\n")
   }
       
   # Upon completion of all iterations, move everything from the farm_archive folder
   # back into the farm directory for post-processing.
-  system(paste0("mv ", dataAssimPath, "/", archiveFolder, "* ", 
+  system(paste0("mv ", dataAssimPath, "/", archiveFolder, "/* ", 
                 dataAssimPath, "/", farmName))
   
   # Wait until the archive folder is empty.
-  while (list.files(paste0(dataAssimPath, "/", archiveFolder))) {Sys.sleep(5)}
+  while (length(list.files(paste0(dataAssimPath, "/", archiveFolder)))) {Sys.sleep(5)}
   
   # Remove the archive folder once it has been emptied.
   system(paste0("rm -rf ", dataAssimPath, "/", archiveFolder))

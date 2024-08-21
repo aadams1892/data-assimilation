@@ -28,14 +28,16 @@ setwd('/home/aadams/projects/def-cseiler-ab/aadams/data-assimilation')
 # This file will be overwritten with new values before CLASSIC is run
 
 # Number of nodes to run meta-jobs on.
-parallel <- 3
+parallel <- 1
 # Time for each meta-job.
-metajobTime <- "0-00:30:00"
+metajobTime <- "0-02:00:00"
 # The farm name.
 farmName <- "CLASSIC_meta"
 
 # Remove folder if it already exists from a previous run.
 if (file.exists(farmName)) {system(paste("rm -rf", farmName))}
+Sys.sleep(1)
+if (file.exists(paste0(farmName, "_ARCHIVE"))) {system(paste0("rm -rf ", farmName, "_ARCHIVE"))}
 Sys.sleep(1)
 
 system('cp /home/aadams/classic/classic_code/classic/configurationFiles/default_run_parameters.txt run_parameters.txt')
@@ -277,7 +279,7 @@ result <- ga_daisy(
     upper = upper,
     popSize = 10, # 40
     elitism = 1, # 4,
-    maxiter = 3, # 20
+    maxiter = 5, # 20
     run = 3, # 20
     maxFitness = 1,
     parallel = parallel,

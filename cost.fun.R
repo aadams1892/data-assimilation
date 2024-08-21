@@ -431,18 +431,20 @@ cost.fun <- function(identifier, indivFile, argValuesFile, argTypesFile,
       
       # Move the finished run into the final output folder.
       
-      # Check if multiple runs finished at the same time. If they did and have the same folder name,
-      # append a number to the timestamped folder that has not yet been moved to differentiate it.
-      if (file.exists(paste0(finalOutputFolder, "/", NewModelOutputFolder))) {
+      # Output folder name check.
+      # If multiple runs finished at the same time and have the same time-stamped folder
+      # name, append a value to the one that has not already been sent to the final output
+      # folder.
+      runOutputFolder <- unlist(strsplit(NewModelOutputFolder, "/"))
+      runOutputFolder <- runOutputFolder[length(runOutputFolder)]
+      finalOutputFolder <- paste(finalOutputFolder, runOutputFolder, sep = "/")
+      if (file.exists(finalOutputFolder)) {
         num <- 1
-        NewModelOutputFolderName <- paste0(NewModelOutputFolder, "_[", num, "]")
-        while (file.exists(paste0(finalOutputFolder, "/", NewModelOutputFolderName))) {
+        finalOutputFolder <- paste(finalOutputFolder, num, sep = "__")
+        while (file.exists(finalOutputFolder)) {
           num <- num + 1
-          NewModelOutputFolderName <- paste0(NewModelOutputFolder, "_[", num, "]")
+          finalOutputFolder <- paste(finalOutputFolder, num, sep = "__")
         }
-        
-        system(paste("mv", NewModelOutputFolder, NewModelOutputFolderName))
-        NewModelOutputFolder <- NewModelOutputFolderName
       }
       Sys.sleep(1)
       
