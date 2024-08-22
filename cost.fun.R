@@ -422,38 +422,23 @@ cost.fun <- function(identifier, indivFile, argValuesFile, argTypesFile,
 
     # Move outputs to a new folder so that they are not overwritten.
     if (keepOutput) {
-
-      NewModelOutputFolder <- paste(modelOutputFolder, timeStamp, sep = "_")
+      NewModelOutputFolder <- paste(modelOutputFolder, paste0("RUN", identifier), sep = "_")
+      NewModelOutputFolder <- paste(NewModelOutputFolder, timeStamp, sep = "_")
       moveModelOutputFolder <- paste("mv", modelOutputFolder, NewModelOutputFolder,
           sep = " ")
       system(moveModelOutputFolder)
-      Sys.sleep(2)
+      Sys.sleep(1)
       
       # Move the finished run into the final output folder.
       
-      # Output folder name check.
-      # If multiple runs finished at the same time and have the same time-stamped folder
-      # name, append a value to the one that has not already been sent to the final output
-      # folder.
-      runOutputFolder <- unlist(strsplit(NewModelOutputFolder, "/"))
-      runOutputFolder <- runOutputFolder[length(runOutputFolder)]
-      finalOutputFolder <- paste(finalOutputFolder, runOutputFolder, sep = "/")
-      if (file.exists(finalOutputFolder)) {
-        num <- 1
-        finalOutputFolder <- paste(finalOutputFolder, num, sep = "__")
-        while (file.exists(finalOutputFolder)) {
-          num <- num + 1
-          finalOutputFolder <- paste(finalOutputFolder, num, sep = "__")
-        }
-      }
-      Sys.sleep(1)
-      
       moveModelOutputFolder <- paste("mv", NewModelOutputFolder, finalOutputFolder)
-      
       system(moveModelOutputFolder)
-      
+      Sys.sleep(1)
       # Make a file containing the name of the output folder for reference.
-      write(NewModelOutputFolder, "simInfo.txt")
+      runFolder <- unlist(strsplit(NewModelOutputFolder, sep = "/"))
+      runFolder <- runFolder[length(runFolder)]
+      runFolder <- paste(finalOutputFolder, runFolder, sep = "/")
+      write(runFolder, "simInfo.txt")
       Sys.sleep(1)
       
     # Delete output folder.
