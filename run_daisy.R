@@ -28,11 +28,34 @@ setwd('/home/aadams/projects/def-cseiler-ab/aadams/data-assimilation')
 # This file will be overwritten with new values before CLASSIC is run
 
 # Number of nodes to run meta-jobs on.
-parallel <- 1
+parallel <- 3
 # Time for each meta-job.
-metajobTime <- "0-02:00:00"
+metajobTime <- "0-00:45:00"
 # The farm name.
 farmName <- "CLASSIC_meta"
+# Directory path for the data-assimilation folder
+dataAssimPath <- "/home/aadams/projects/def-cseiler-ab/aadams/data-assimilation"
+
+# Check if there is an object.rds file in the farm directory from a previous run. If there is,
+# copy it to the data-assimilation folder before deleting the farm directory. Since the file
+# will always be called object.rds, let ga_daisy know that an object file exists in the data-assimilation
+# folder.
+if (file.exists(paste0(farmName, "/object.rds"))) {
+  
+  # Remove a previous object.rds file from the dataAssimPath and replace it with
+  # this new one.
+  if (ile.exists(paste0(dataAssimPath, "/object.rds"))) {
+    system(paste0("rm ", dataAssimPath, "/object.rds"))
+    Sys.sleep(2)
+  }
+  
+  system(paste0("mv ", farmName, "/object.rds ", dataAssimPath))
+  previousObject <- paste(dataAssimPath, "object.rds", sep = "/")
+  Sys.sleep(3)
+  
+} else {
+  previousObject <- NULL
+}
 
 # Remove folder if it already exists from a previous run.
 if (file.exists(farmName)) {system(paste("rm -rf", farmName))}
@@ -280,11 +303,13 @@ result <- ga_daisy(
     popSize = 10, # 40
     elitism = 1, # 4,
     maxiter = 5, # 20
-    run = 3, # 20
+    run = 5, # 20
     maxFitness = 1,
     parallel = parallel,
     jobTime = metajobTime,
     farmName = farmName,
+    dataAssimPath = dataAssimPath,
+    previousObject = previousObject,
     suggestions = normParameterValues,
     keepBest = TRUE,
     keepOutput = keepOutput,

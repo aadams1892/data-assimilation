@@ -23,6 +23,8 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
                parallel,
                jobTime,
                farmName,
+               dataAssimPath,
+               previousObject = NULL,
                names = NULL,
                suggestions = NULL,
                optim = FALSE,
@@ -198,12 +200,13 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
   if(popSize > ng)
     { Pop[(ng+1):popSize,] <- population(object)[1:(popSize-ng),] }
   object@population <- Pop
-
+  
+      # If a previous object exists, read it in. - aadams
       start <- 1 # cseiler: start of iteration
       # cseiler: in case the run was interrupted, read the object from your last iteration:
-      if(file.exists("object.rds")) {
+      if(!is.null(previousObject)) {
         print("I will take the most recent object.rds file!")
-        object <- readRDS("object.rds")
+        object <- readRDS(previousObject)
         fitnessSummary <- object@summary
         Fitness <- object@fitness
         Pop <- object@population
@@ -218,7 +221,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
   for(iter in seq(start, maxiter, 1)) # cseiler: in case of interruption, continue with last iterration
      {
       object@iter <- iter
-        
+      
       # Get individuals we need to calculate the fitness for.
       getFitFor <- list()
       for (i in 1:popSize) {
@@ -228,7 +231,6 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       }
         
       # File names.
-      dataAssimPath <- "/home/aadams/projects/def-cseiler-ab/aadams/data-assimilation"
       argValsFile <- "argValues.txt"
       argTypesFile <- "argTypes.txt"
       argLensFile <- "argLengths.txt"
@@ -384,6 +386,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       # Local search optimisation
       if(optim & (type == "real-valued"))
       {
+        set.seed(1) # aadams
         if(optimArgs$poptim > runif(1))
         { # perform local search from random selected solution
           # with prob proportional to fitness
@@ -480,7 +483,9 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
         { nmating <- floor(popSize/2)
           mating <- matrix(sample(1:(2*nmating), size = (2*nmating)), ncol = 2)
           for(i in seq_len(nmating))
-             { if(pcrossover > runif(1))
+            
+             {  set.seed(1) # aadams
+                if(pcrossover > runif(1))
                  { parents <- mating[i,]
                    Crossover <- crossover(object, parents)
                    Pop[parents,] <- Crossover$children
@@ -495,7 +500,8 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       pm <- if(is.function(pmutation)) pmutation(object) else pmutation
       if(is.function(mutation) & pm > 0)
         { for(i in seq_len(popSize)) 
-             { if(pm > runif(1)) 
+             {  set.seed(1) # aadams
+                if(pm > runif(1)) 
                  { Mutation <- mutation(object, i)
                    Pop[i,] <- Mutation
                    Fitness[i] <- NA
