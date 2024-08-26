@@ -435,7 +435,7 @@ cost.fun <- function(identifier, indivFile, argValuesFile, argTypesFile,
       system(moveModelOutputFolder)
       Sys.sleep(1)
       # Make a file containing the name of the output folder for reference.
-      runFolder <- unlist(strsplit(NewModelOutputFolder, sep = "/"))
+      runFolder <- unlist(strsplit(NewModelOutputFolder, "/"))
       runFolder <- runFolder[length(runFolder)]
       runFolder <- paste(finalOutputFolder, runFolder, sep = "/")
       write(runFolder, "simInfo.txt")
