@@ -367,9 +367,9 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
           # simInfo.txt file. Otherwise, it will be on the second line, with the first line
           # being the name of the time-stamped output folder.
           if (keepOutput) {
-            score <- read_lines("simInfo.txt", skip = 1, n_max = 1)
+             read_lines("simInfo.txt", skip = 1, n_max = 1)
           } else {
-            score <- readLines("siminfo.txt")
+            score <- readLines("simInfo.txt")
           }
             
           # Return to the farm directory
