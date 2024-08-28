@@ -386,7 +386,6 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       # Local search optimisation
       if(optim & (type == "real-valued"))
       {
-        set.seed(1) # aadams
         if(optimArgs$poptim > runif(1))
         { # perform local search from random selected solution
           # with prob proportional to fitness
@@ -481,11 +480,10 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       # crossover
       if(is.function(crossover) & pcrossover > 0)
         { nmating <- floor(popSize/2)
-          set.seed(1) # aadams
           mating <- matrix(sample(1:(2*nmating), size = (2*nmating)), ncol = 2)
           for(i in seq_len(nmating))
             
-             {  set.seed(1) # aadams
+             { 
                 if(pcrossover > runif(1))
                  { parents <- mating[i,]
                    Crossover <- crossover(object, parents)
@@ -501,7 +499,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       pm <- if(is.function(pmutation)) pmutation(object) else pmutation
       if(is.function(mutation) & pm > 0)
         { for(i in seq_len(popSize)) 
-             {  set.seed(1) # aadams
+             {
                 if(pm > runif(1)) 
                  { Mutation <- mutation(object, i)
                    Pop[i,] <- Mutation
