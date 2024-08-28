@@ -215,6 +215,25 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
         seed <- 1
         run <- object@maxiter
         } # cseiler
+      
+      # aadams reproducibility test. Manually transferring population
+      # UNCOMMENT FOR SECOND TEST
+      #f <- "/home/aadams/projects/def-cseiler-ab/aadams/data-assimilation/CLASSIC_meta_test_3nodes_seed1_1/GEN1/population.txt"
+      #pop <- readLines(f)
+      
+      #for (i in 1:length(pop)) {
+      #  iConv <- trimws(pop[i])
+      #  iConv <- unlist(strsplit(iConv, " "))
+      #  iConv <- as.double(iConv)
+      #  Pop[i,] <- iConv
+      #}
+      
+      #print(Pop)
+      #print(typeof(Pop))
+      #print(dim(Pop))
+      #print(object@population)
+      
+      #break
 
   # start iterations
   # for(iter in seq_len(maxiter))
@@ -386,6 +405,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       # Local search optimisation
       if(optim & (type == "real-valued"))
       {
+        set.seed(1) # aadams
         if(optimArgs$poptim > runif(1))
         { # perform local search from random selected solution
           # with prob proportional to fitness
@@ -480,10 +500,11 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       # crossover
       if(is.function(crossover) & pcrossover > 0)
         { nmating <- floor(popSize/2)
+          set.seed(1) # aadams
           mating <- matrix(sample(1:(2*nmating), size = (2*nmating)), ncol = 2)
           for(i in seq_len(nmating))
             
-             {
+             {  set.seed(1) # aadams
                 if(pcrossover > runif(1))
                  { parents <- mating[i,]
                    Crossover <- crossover(object, parents)
@@ -499,7 +520,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
       pm <- if(is.function(pmutation)) pmutation(object) else pmutation
       if(is.function(mutation) & pm > 0)
         { for(i in seq_len(popSize)) 
-             {
+             {  set.seed(1) # aadams
                 if(pm > runif(1)) 
                  { Mutation <- mutation(object, i)
                    Pop[i,] <- Mutation
@@ -545,17 +566,19 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
     }
     # End of iteration
   }
-      
-  # Upon completion of all iterations, move everything from the farm_archive folder
-  # back into the farm directory for post-processing.
-  system(paste0("mv ", dataAssimPath, "/", archiveFolder, "/* ", 
-                dataAssimPath, "/", farmName))
   
-  # Wait until the archive folder is empty.
-  while (length(list.files(paste0(dataAssimPath, "/", archiveFolder)))) {Sys.sleep(5)}
-  
-  # Remove the archive folder once it has been emptied.
-  system(paste0("rm -rf ", dataAssimPath, "/", archiveFolder))
+  if (keepOutput) {    
+    # Upon completion of all iterations, move everything from the farm_archive folder
+    # back into the farm directory for post-processing.
+    system(paste0("mv ", dataAssimPath, "/", archiveFolder, "/* ", 
+                  dataAssimPath, "/", farmName))
+    
+    # Wait until the archive folder is empty.
+    while (length(list.files(paste0(dataAssimPath, "/", archiveFolder)))) {Sys.sleep(5)}
+    
+    # Remove the archive folder once it has been emptied.
+    system(paste0("rm -rf ", dataAssimPath, "/", archiveFolder))
+  }
   
   ### cseiler: end of for loop
   # if optim is required perform a local search from the best 
