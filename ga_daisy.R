@@ -215,25 +215,6 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
         seed <- 1
         run <- object@maxiter
         } # cseiler
-      
-      # aadams reproducibility test. Manually transferring population
-      # UNCOMMENT FOR SECOND TEST
-      #f <- "/home/aadams/projects/def-cseiler-ab/aadams/data-assimilation/CLASSIC_meta_test_3nodes_seed1_1/GEN1/population.txt"
-      #pop <- readLines(f)
-      
-      #for (i in 1:length(pop)) {
-      #  iConv <- trimws(pop[i])
-      #  iConv <- unlist(strsplit(iConv, " "))
-      #  iConv <- as.double(iConv)
-      #  Pop[i,] <- iConv
-      #}
-      
-      #print(Pop)
-      #print(typeof(Pop))
-      #print(dim(Pop))
-      #print(object@population)
-      
-      #break
 
   # start iterations
   # for(iter in seq_len(maxiter))
