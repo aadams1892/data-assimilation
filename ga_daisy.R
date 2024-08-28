@@ -369,7 +369,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
           if (keepOutput) {
             score <- read_lines("simInfo.txt", skip = 1, n_max = 1)
           } else {
-            score <- readLines(f)
+            score <- readLines("siminfo.txt")
           }
             
           # Return to the farm directory
