@@ -579,7 +579,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
   system(paste0("mv ", dataAssimPath, "/", archiveFolder, "/object* ", 
                 dataAssimPath, "/", archiveFolder, "/", simArchiveFolder))
   # Wait for all GEN folders and object iteration files to be moved.
-  while (file.exists(paste0(archiveFolder, "/GEN*")) || file.exists(paste0(archiveFolder, "/object*"))) {
+  while (file.exists(paste0(archiveFolder, "/GEN*")) | file.exists(paste0(archiveFolder, "/object*"))) {
     Sys.sleep(5)
   }
   
