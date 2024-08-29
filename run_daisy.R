@@ -28,23 +28,28 @@ setwd('/home/aadams/projects/def-cseiler-ab/aadams/data-assimilation')
 # This file will be overwritten with new values before CLASSIC is run
 
 # Number of nodes to run meta-jobs on.
-parallel <- 3
+parallel <- 5
 # Time for each meta-job.
-metajobTime <- "0-00:45:00"
+metajobTime <- "0-00:30:00"
 # The farm name.
 farmName <- "CLASSIC_meta"
 # Directory path for the data-assimilation folder
 dataAssimPath <- "/home/aadams/projects/def-cseiler-ab/aadams/data-assimilation"
+# Archive folder for meta runs.
+archiveFolder <- paste0(farmName, "_ARCHIVE")
+# Make the archive folder if it does not exist already.
+if (!file.exists(paste0(farmName, "_ARCHIVE"))) {system(paste0("mkdir ", farmName, "_ARCHIVE"))}
+Sys.sleep(1)
 
 # Check if there is an object.rds file in the farm directory from a previous run. If there is,
 # copy it to the data-assimilation folder before deleting the farm directory. Since the file
 # will always be called object.rds, let ga_daisy know that an object file exists in the data-assimilation
 # folder.
 if (file.exists(paste0(farmName, "/object.rds"))) {
-  
+
   # Remove a previous object.rds file from the dataAssimPath and replace it with
   # this new one.
-  if (ile.exists(paste0(dataAssimPath, "/object.rds"))) {
+  if (file.exists(paste0(dataAssimPath, "/object.rds"))) {
     system(paste0("rm ", dataAssimPath, "/object.rds"))
     Sys.sleep(2)
   }
@@ -59,8 +64,6 @@ if (file.exists(paste0(farmName, "/object.rds"))) {
 
 # Remove folder if it already exists from a previous run.
 if (file.exists(farmName)) {system(paste("rm -rf", farmName))}
-Sys.sleep(1)
-if (file.exists(paste0(farmName, "_ARCHIVE"))) {system(paste0("rm -rf ", farmName, "_ARCHIVE"))}
 Sys.sleep(1)
 
 system('cp /home/aadams/classic/classic_code/classic/configurationFiles/default_run_parameters.txt run_parameters.txt')
@@ -166,6 +169,7 @@ for (p in 1:length(parameterValues)) {
 
 parameterValueLength <- sapply(normalization, length)
 normParameterValues <- unlist(normalization)
+
 upperBound <- unlist(upperBound)
 lowerBound <- unlist(lowerBound) 
 
@@ -274,7 +278,7 @@ modelOutputFolder <- "/home/aadams/projects/def-cseiler-ab/aadams/data-assimilat
 
 # By default, keepOutput is FALSE and simFolder is NULL.
 # keepOutput is a logical argument determining whether output is kept.
-keepOutput <- TRUE
+keepOutput <- FALSE
 # simFolder is the folder where finished model output is moved to.
 simFolder <- "/home/aadams/projects/def-cseiler-ab/aadams/data-assimilation/simulations"
 
@@ -302,8 +306,8 @@ result <- ga_daisy(
     upper = upper,
     popSize = 10, # 40
     elitism = 1, # 4,
-    maxiter = 5, # 20
-    run = 5, # 20
+    maxiter = 3, # 20
+    run = 3, # 20
     maxFitness = 1,
     parallel = parallel,
     jobTime = metajobTime,
@@ -313,6 +317,7 @@ result <- ga_daisy(
     suggestions = normParameterValues,
     keepBest = TRUE,
     keepOutput = keepOutput,
+    archiveFolder = archiveFolder,
     finalOutputFolder = simFolder,
     seed = 1)
 saveRDS(result, "result.rds")

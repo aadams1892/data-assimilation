@@ -34,6 +34,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
                                 control = list(fnscale = -1, maxit = 100)),
                keepBest = FALSE,
                keepOutput = FALSE,
+               archiveFolder,
                finalOutputFolder = NULL,
                monitor = if(interactive()) gaMonitor else FALSE,
                seed = NULL) 
@@ -118,7 +119,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
                              names <- paste0("x", 1:nvars)
                          }
         )
-
+  
   # check suggestions
   if(is.null(suggestions))
     { suggestions <- matrix(nrow = 0, ncol = nvars) }
@@ -195,7 +196,8 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
   Pop <- matrix(as.double(NA), nrow = popSize, ncol = nvars)
   ng <- min(nrow(suggestions), popSize)
   if(ng > 0) # use suggestion if provided
-    { Pop[1:ng,] <- suggestions }
+  { Pop[1:ng,] <- suggestions }
+  
   # fill the rest with a random population
   if(popSize > ng)
     { Pop[(ng+1):popSize,] <- population(object)[1:(popSize-ng),] }
@@ -221,7 +223,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
   for(iter in seq(start, maxiter, 1)) # cseiler: in case of interruption, continue with last iterration
      {
       object@iter <- iter
-      
+  
       # Get individuals we need to calculate the fitness for.
       getFitFor <- list()
       for (i in 1:popSize) {
@@ -348,7 +350,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
           # simInfo.txt file. Otherwise, it will be on the second line, with the first line
           # being the name of the time-stamped output folder.
           if (keepOutput) {
-             read_lines("simInfo.txt", skip = 1, n_max = 1)
+            score <- read_lines("simInfo.txt", skip = 1, n_max = 1)
           } else {
             score <- readLines("simInfo.txt")
           }
@@ -483,7 +485,7 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
           mating <- matrix(sample(1:(2*nmating), size = (2*nmating)), ncol = 2)
           for(i in seq_len(nmating))
             
-             { 
+             {
                 if(pcrossover > runif(1))
                  { parents <- mating[i,]
                    Crossover <- crossover(object, parents)
@@ -532,31 +534,59 @@ ga_daisy <- function(type = c("binary", "real-valued", "permutation"),
     #  if(iter == 80){stop(iter)}
     # cseiler end
     
+    # Move the generation output to the archive folder.
     if (keepOutput) {
-      # Move the iteration output to the farm_archive folder.
-      archiveFolder <- paste0(farmName, "_ARCHIVE")
-
-      # Create the archive folder in the data assimilation directory.
-      system(paste0("mkdir ", dataAssimPath, "/", archiveFolder))
-      Sys.sleep(2)
+      # Move the genFolder and object iteration file to the ARCHIVE folder.
       system(paste0("mv ", genFolder, " ", dataAssimPath, "/", archiveFolder))
-      system(paste0("mv ", "object_iteration_", iter, ".rds ", 
-                    dataAssimPath, "/", archiveFolder))
+      
+    } else {
+      if (iter > 1) {
+        # Remove the previous object iteration file.
+        system(paste0("rm ", dataAssimPath, "/", archiveFolder, "/object_iteration_", iter-1, ".rds"))
+      }
     }
+    
+    # Save the most recent object iteration file.
+    system(paste0("mv ", "object_iteration_", iter, ".rds ", 
+                  dataAssimPath, "/", archiveFolder))
+    Sys.sleep(1)
+    
     # End of iteration
   }
-  
-  if (keepOutput) {    
-    # Upon completion of all iterations, move everything from the farm_archive folder
-    # back into the farm directory for post-processing.
-    system(paste0("mv ", dataAssimPath, "/", archiveFolder, "/* ", 
+
+  # Upon completion of all iterations, copy the GEN folders and object iteration
+  # files into the farm directory.
+  if (keepOutput) {
+    system(paste0("cp ", dataAssimPath, "/", archiveFolder, "/GEN* ", 
                   dataAssimPath, "/", farmName))
-    
-    # Wait until the archive folder is empty.
-    while (length(list.files(paste0(dataAssimPath, "/", archiveFolder)))) {Sys.sleep(5)}
-    
-    # Remove the archive folder once it has been emptied.
-    system(paste0("rm -rf ", dataAssimPath, "/", archiveFolder))
+  }
+  system(paste0("cp ", dataAssimPath, "/", archiveFolder, "/object* ", 
+                dataAssimPath, "/", farmName))
+  Sys.sleep(1)
+  
+  # Move the GEN folders and object iteration files into a timestamped folder.
+  timeStamp <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
+  # The name of the folder for the run in the archive folder.
+  simArchiveFolder <- paste("CLASSIC", timeStamp, sep = "_")
+  system(paste0("mkdir ", archiveFolder, "/", simArchiveFolder))
+  Sys.sleep(2)
+  
+  # Move GEN folders and object iteration files into the simulation archive folder.
+  if (keepOutput) {
+    system(paste0("mv ", dataAssimPath, "/", archiveFolder, "/GEN* ", 
+                  dataAssimPath, "/", archiveFolder, "/", simArchiveFolder))
+  }
+  system(paste0("mv ", dataAssimPath, "/", archiveFolder, "/object* ", 
+                dataAssimPath, "/", archiveFolder, "/", simArchiveFolder))
+  # Wait for all GEN folders and object iteration files to be moved.
+  while (file.exists(paste0(archiveFolder, "/GEN*")) || file.exists(paste0(archiveFolder, "/object*"))) {
+    Sys.sleep(5)
+  }
+  
+  # Remove the final generation folder from the farm directory if output is not being kept.
+  if (!keepOutput) {
+    system(paste0("rm -rf ", dataAssimPath, "/", farmName, "/GEN*"))
+    Sys.sleep(2)
   }
   
   ### cseiler: end of for loop
